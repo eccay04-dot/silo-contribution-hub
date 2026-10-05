@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Silo Contribution Hub - Slack UI</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#fff;--fg:#1d1c1d;--mut:#616061;--line:#e0e0e0;--side:#3f0e40;--sidefg:#cfc3cf;--sel:#1164a3;--chip:#f4f4f4;--blue:#1264a3;--green:#007a5a;--card:#f8f8f8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1d21;--fg:#d1d2d3;--mut:#ababad;--line:#36393d;--chip:#2c2f33;--card:#222529}}
+:root[data-theme="dark"]{--bg:#1a1d21;--fg:#d1d2d3;--mut:#ababad;--line:#36393d;--chip:#2c2f33;--card:#222529}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;font-family:Lato,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;background:var(--bg);color:var(--fg);font-size:15px}
+.app{display:flex;height:100vh;height:100dvh;max-height:760px;min-height:560px;border:1px solid var(--line);margin:8px;border-radius:8px;overflow:hidden}
+.side{width:230px;background:var(--side);color:var(--sidefg);padding:12px 0;overflow:auto;flex:none}
+.side h4{color:#fff;margin:4px 16px 12px;font-size:16px}.side .sec{font-size:13px;margin:14px 16px 4px;opacity:.8}
+.side a{display:block;padding:3px 16px;cursor:pointer;font-size:14px}.side a.on{background:var(--sel);color:#fff}.side a:hover:not(.on){background:rgba(255,255,255,.1)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.head{padding:10px 16px 0;border-bottom:1px solid var(--line)}.head b{font-size:17px}.head small{color:var(--mut);margin-left:8px}
+.tabs{display:flex;gap:18px;margin-top:8px}.tabs span{padding:6px 2px;cursor:pointer;color:var(--mut);font-size:14px;border-bottom:2px solid transparent}.tabs span.on{color:var(--fg);font-weight:700;border-color:var(--green)}
+.body{flex:1;overflow:auto;padding:14px 16px;position:relative}
+.msg{display:flex;gap:10px;margin-bottom:14px}.av{width:36px;height:36px;border-radius:6px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700}
+.msg b{font-size:15px}.msg time{color:var(--mut);font-size:12px;margin-left:6px}.msg p{margin:2px 0}
+.react{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:1px 8px;font-size:12px;margin-top:4px}
+.app-card{border-left:4px solid var(--blue);background:var(--card);border-radius:4px;padding:10px 12px;margin-top:6px;max-width:520px}
+.app-card .sub{color:var(--mut);font-size:13px;margin:4px 0 8px}
+.btn{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:4px;padding:5px 12px;font-size:14px;cursor:pointer;font-weight:700}.btn.pri{background:var(--green);color:#fff;border-color:var(--green)}
+.badge{font-size:11px;background:var(--chip);border-radius:3px;padding:1px 5px;margin-left:6px;color:var(--mut)}
+.composer{margin:0 16px 14px;border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--mut);font-size:14px}
+.modal{position:absolute;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:5}.modal.show{display:flex}
+.dlg{background:var(--bg);width:min(480px,94%);max-height:94%;overflow:auto;border-radius:10px;padding:18px}
+.dlg h3{margin:0 0 4px}.dlg label{display:block;font-weight:700;font-size:13px;margin:12px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1px solid var(--line);background:var(--chip);border-radius:16px;padding:4px 11px;font-size:13px;cursor:pointer}.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+select,textarea,input{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:4px;padding:8px;font:inherit}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:10px 0}.stat{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 10px}.stat b{font-size:20px;display:block}.stat span{font-size:12px;color:var(--mut)}
+.row{border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}.row.sel{border-color:var(--green);background:var(--card)}
+.row input{width:auto;margin-top:3px}.tag{font-size:12px;color:var(--blue);margin-right:6px}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:8px 0}.bar i{display:block}
+h5{margin:14px 0 6px;font-size:14px}.ev{display:inline-block;background:var(--chip);border-radius:4px;padding:2px 8px;font-size:12px;margin:2px 4px 2px 0}
+.note{color:var(--mut);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:10px 0}.seg span{padding:5px 14px;font-size:13px;cursor:pointer;background:var(--bg)}.seg span.on{background:var(--green);color:#fff;font-weight:700}
+details{border:1px solid var(--line);border-radius:6px;margin-bottom:8px}summary{cursor:pointer;padding:8px 10px;font-size:14px;list-style:none}summary::-webkit-details-marker{display:none}summary:before{content:"▸ ";color:var(--mut)}details[open]>summary:before{content:"▾ "}
+details .in{padding:0 10px 10px}.ph{font-size:12px;font-weight:700;color:var(--mut);margin:8px 0 4px}details.hi{margin:4px 0}details.hi .cc{margin:0 0 6px}
+.rv{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:6px;cursor:pointer}.rv.on{border-color:var(--green);background:var(--card)}.rv input{width:auto;margin-top:3px;pointer-events:none}
+.ban{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:8px 0}.star{font-weight:700;margin:12px 0 4px}
+
+.cc{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:6px;padding:12px;margin-bottom:12px}.cch{display:flex;justify-content:space-between;margin-bottom:4px}
+.lab{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;margin:10px 0 4px;letter-spacing:.04em}
+.evi{display:flex;gap:8px;background:var(--card);border-radius:4px;padding:6px 8px;margin-bottom:4px;font-size:14px}.imp{background:var(--card);border-radius:4px;padding:8px 10px}.imp b{color:var(--green)}
+
+@media(max-width:640px){.side{display:none}}
+</style></head><body>
+<div class="app">
+<nav class="side"><h4>toss ▾</h4>
+<a>🏠 홈</a><a>💬 DM</a><a>🔔 활동</a>
+<div class="sec">▾ 채널</div><a># general</a><a class="on"># payment-redesign</a><a># product</a><a># design</a><a># data</a>
+<div class="sec">▾ 앱</div><a>◆ Contribution Hub</a>
+<div class="sec">▾ 다이렉트 메시지</div><a>● 지인 (나)</a><a>● 서연</a><a>● 도현</a></nav>
+<section class="main">
+<div class="head"><b># payment-redesign</b><small>결제 화면 개선 프로젝트 · 12명</small>
+<div class="tabs" id="tabs"><span data-t="msg" class="on">메시지</span><span data-t="me">My Contribution</span><span data-t="rev">분기 리뷰</span></div></div>
+<div class="body" id="body"></div>
+<div class="modal" id="modal"><div class="dlg">
+<h3>Add to contribution</h3><div class="note">AI가 이 메시지를 기여로 분류할 가능성이 높다고 판단했어요. 저장은 내가 확인해야 완료돼요.</div>
+<label>프로젝트</label><select><option>결제 화면 개편</option><option>리워드 정책</option></select>
+<label>어떤 업무와 관련이 있나요? <span class="badge">AI 추천 ✨</span></label>
+<div class="chips" id="types"></div>
+<label>메모 추가 (선택)</label><textarea rows="3" placeholder="본인의 기여를 더 자세히 설명하고 싶다면 적어주세요"></textarea>
+<label>관련 자료 (선택)</label><div class="chips"><span class="chip">Slack 메시지</span><span class="chip">문서</span><span class="chip">회의/파일</span></div>
+<div class="foot"><button class="btn" id="cancel">취소</button><button class="btn pri" id="save">저장하기</button></div>
+</div></div>
+</section></div>
+<script>
+const types=['문제 발견','아이디어 제안','의사결정','실행','협업','문제 해결','직접 입력'];
+const TC={'문제 발견':'#1264a3','아이디어 제안':'#8b6cff','의사결정':'#d6336c','실행':'#e8912d','협업':'#2eb67d','문제 해결':'#0b8a8a'};
+const ico={add:'✨',doc:'📄',ab:'📊'};
+const A=(t,s)=>['add',t,s],D=t=>['doc',t,'Docs'];
+const ALL=[];const mk=(q,proj,t,title,d,ev,imp,kpi)=>ALL.push({id:ALL.length+1,q,proj,t,title,d,ev,imp:imp||'(수치 입력)',kpi:kpi||'사일로 KPI 분석 결과'});
+const P1='결제 화면 개편';
+mk('2025 Q3',P1,'문제 발견','신규 사용자 이탈 원인 분석 및 문제 정의','2025.07.15',[A('카드 등록 단계에서 이탈이 가장 높은 것 같습니다','#payment-redesign · 07.15'),D('신규 사용자 퍼널 분석 문서'),['ab','A/B test 결과 (카드 등록 1단계 축소)','Data']],'신규 사용자 이탈률 5% 감소','사일로 KPI: 결제 전환율 분석 결과');
+mk('2025 Q3',P1,'아이디어 제안','리워드 정책 변경안 제안','2025.08.03',[A('첫 결제 리워드 조건 변경을 제안드립니다','#payment-redesign · 08.03'),D('PM 논의 회의록')],null,'사일로 KPI: 재결제율');
+mk('2025 Q3',P1,'실행','결제 API 오류 원인 분석 및 수정','2025.08.20',[A('결제 API 타임아웃 원인을 찾았습니다','#payment-redesign · 08.20'),D('장애 분석 문서')],null,'사일로 KPI: 결제 성공률');
+mk('2025 Q3',P1,'협업','개발팀과 UX 개선안 조율','2025.09.02',[A('UX 개선안 개발 일정 조율 완료','#payment-redesign · 09.02')],null,'사일로 KPI: 마일스톤 달성');
+mk('2025 Q3','리워드 정책','의사결정','리워드 지급 조건 결정 회의 주도','2025.08.10',[A('지급 조건 A안으로 확정하겠습니다','#reward-policy · 08.10'),D('의사결정 문서')]);
+mk('2025 Q3','리워드 정책','아이디어 제안','재방문 쿠폰 시나리오 제안','2025.08.25',[A('재방문 쿠폰 시나리오를 정리해봤어요','#reward-policy · 08.25')]);
+mk('2025 Q3','송금 UX 개선','문제 발견','송금 완료 화면 이탈 구간 발견','2025.07.28',[A('완료 화면에서 이탈이 높습니다','#send-ux · 07.28')]);
+mk('2025 Q3','송금 UX 개선','협업','디자인팀과 송금 플로우 리뷰 조율','2025.08.14',[A('플로우 리뷰 일정 공유드립니다','#send-ux · 08.14')]);
+mk('2025 Q3','송금 UX 개선','문제 해결','송금 한도 안내 문구 혼선 해결','2025.09.08',[A('한도 안내 문구를 통일했습니다','#send-ux · 09.08'),D('문구 가이드')]);
+mk('2025 Q3','데이터 대시보드','실행','이탈 퍼널 대시보드 구축','2025.09.12',[A('퍼널 대시보드 1차 배포했어요','#data · 09.12'),D('대시보드 명세')]);
+mk('2025 Q3','데이터 대시보드','문제 해결','지표 정의 불일치 정리','2025.09.15',[A('이탈률 정의가 팀마다 달라요, 통일안 공유합니다','#data · 09.15')]);
+mk('2025 Q3','데이터 대시보드','협업','사일로 KPI 정의 워크숍 참여','2025.09.20',[A('KPI 워크숍 결과 정리','#data · 09.20')]);
+mk('2025 Q2','앱 온보딩 개선','문제 발견','가입 단계 이탈 원인 발견','2025.05.12',[A('가입 3단계에서 이탈이 큽니다','#onboarding · 05.12')],'가입 완료율 개선 (수치 입력)','사일로 KPI: 가입 전환율');
+mk('2025 Q2','앱 온보딩 개선','아이디어 제안','본인인증 단계 축소안 제안','2025.05.30',[A('본인인증 단계를 줄이는 안입니다','#onboarding · 05.30'),D('개선안 문서')]);
+mk('2025 Q2','알림 개선','실행','푸시 알림 문구 A/B 테스트 실행','2025.06.18',[A('A/B 테스트 시작합니다','#notification · 06.18'),['ab','A/B test 결과','Data']]);
+mk('2025 Q1','신규 서비스 기획','의사결정','우선순위 기준 합의 주도','2025.02.20',[A('우선순위 기준을 이렇게 정리했습니다','#planning · 02.20')]);
+mk('2025 Q1','신규 서비스 기획','협업','유관 부서 요구사항 조율','2025.03.10',[A('요구사항 정리본 공유드립니다','#planning · 03.10')]);
+let saved=false,sel='문제 발견',view='msg',scope='project',filt='전체',rfilt='전체',picks=[],why={},warn='',done=false;
+const $=s=>document.querySelector(s),body=$('#body');
+const evN=x=>x.ev.length+(saved&&x.id===1?1:0);
+function cardHTML(x){const c=TC[x.t];const extra=(x.id===1&&saved)?`<div class="evi"><span>✨</span><div>신규 사용자의 결제 화면 이탈률을 보니…<span class="badge">NEW</span><div class="note">#payment-redesign · 방금 · ${sel}</div></div></div>`:'';
+return `<div class="cc" style="border-left-color:${c}"><div class="cch"><span class="tag" style="color:${c}">${x.t}</span><span class="note">${x.proj} · ${x.d}</span></div>
+<div class="lab">Contribution</div><b>${x.title}</b>
+<div class="lab">Evidence <span class="badge">Add to contribution 연결 ${x.ev.filter(e=>e[0]==='add').length+(extra?1:0)}건</span></div>
+${extra}${x.ev.map(e=>`<div class="evi"><span>${ico[e[0]]}</span><div>${e[1]}<div class="note">${e[2]}</div></div></div>`).join('')}
+<div class="lab">Impact</div><div class="imp"><b>${x.imp}</b><div class="note">${x.kpi}</div></div></div>`}
+function msgView(){return `
+<div class="msg"><div class="av" style="background:#e8912d">A</div><div><b>Ayeon</b><time>10:24 AM</time>
+<p>신규 사용자의 결제 화면 이탈률을 보니 카드 등록 단계에서 이탈이 가장 높은 것 같습니다.<br>이 부분을 한 단계 줄이는 게 좋을 것 같아요.</p><span class="react">👍 3</span>
+${saved?`<div class="app-card"><b>✅ Contribution에 기록됨</b><span class="badge">${sel}</span><div class="sub">나에게만 보이는 메시지예요. My Contribution 탭에서 확인할 수 있어요.</div></div>`:
+`<div class="app-card"><b>✨ Contribution으로 기록할까요?</b><div class="sub">이 메시지는 <b>문제 발견</b>에 해당할 가능성이 높아요. · 나에게만 보임</div>
+<button class="btn pri" id="add">Add to contribution</button> <button class="btn" id="no">Not now</button></div>`}
+</div></div>
+<div class="msg"><div class="av" style="background:#2eb67d">J</div><div><b>준호</b><time>10:26 AM</time><p>좋은 인사이트예요! 바로 분석 진행해볼게요.</p></div></div>
+<div class="msg"><div class="av" style="background:#36c5f0">J</div><div><b>지인</b><time>10:28 AM</time><p>넵! 관련 데이터도 같이 공유드릴게요.</p></div></div>
+<div class="composer">#payment-redesign 에 메시지 보내기</div>`}
+
+function meView(){
+const cur=ALL.filter(x=>x.proj===P1);const ev=ALL.reduce((n,x)=>n+evN(x),0);
+let h=`<div style="display:flex;gap:12px;align-items:center"><div class="av" style="background:#e8912d;width:48px;height:48px">김</div><div><b style="font-size:17px">김아연</b><div class="note">Product Owner · 결제화면개편 사일로</div></div></div>
+<div class="grid"><div class="stat"><b>${ALL.length}건</b><span>누적 기여</span></div><div class="stat"><b>${ev}개</b><span>누적 Evidence</span></div><div class="stat"><b>${ALL.filter(x=>x.q==='2025 Q3').length}건</b><span>이번 분기</span></div></div>
+<div class="seg" id="seg"><span data-sc="project" class="${scope==='project'?'on':''}">이번 프로젝트</span><span data-sc="history" class="${scope==='history'?'on':''}">전체 히스토리</span></div>`;
+if(scope==='project'){const L=cur.filter(x=>filt==='전체'||x.t===filt);const ts=[...new Set(cur.map(x=>x.t))];
+h+=`<div class="note" style="margin-bottom:8px">${P1} 프로젝트에서 한 기여 ${cur.length}건 · 점수·순위가 아닌 증거 모음입니다. (예시 데이터)</div>
+<div class="chips" style="margin-bottom:10px">${['전체',...ts].map(t=>`<span class="chip ${t===filt?'on':''}" data-f="${t}">${t}${t==='전체'?'':' '+cur.filter(x=>x.t===t).length}</span>`).join('')}</div>`+L.map(cardHTML).join('');}
+else{h+=`<input id="hq" placeholder="기여, 프로젝트, 근거로 검색" style="margin-bottom:10px"><div class="note" style="margin-bottom:8px">모든 기여와 근거가 분기·프로젝트별로 누적 보관돼요. 언제든 열어서 회고나 리뷰의 근거로 쓸 수 있어요.</div>`;
+['2025 Q3','2025 Q2','2025 Q1'].forEach(q=>{const it=ALL.filter(x=>x.q===q);const pj=[...new Set(it.map(x=>x.proj))];
+h+=`<details ${q==='2025 Q3'?'open':''}><summary><b>${q}</b> · 기여 ${it.length}건 · 프로젝트 ${pj.length}개</summary><div class="in">${pj.map(p=>`<div class="ph">${p}</div>`+it.filter(x=>x.proj===p).map(x=>`<details class="hi"><summary><span class="tag" style="color:${TC[x.t]}">${x.t}</span>${x.title} <span class="note">${x.d}</span></summary>${cardHTML(x)}</details>`).join('')).join('')}</div></details>`});}
+return h}
+function revView(){
+const q3=ALL.filter(x=>x.q==='2025 Q3');const ts=[...new Set(q3.map(x=>x.t))];const L=q3.filter(x=>rfilt==='전체'||x.t===rfilt);
+const gts=[...new Set(L.map(x=>x.t))];
+let h=`<b style="font-size:17px">이번 분기 주요 기여를 확인해보세요.</b>
+<div class="ban">✨ 자동으로 발견된 Contribution <b>${q3.length}개</b> <span class="note">· 2025 Q3 · My Contribution에 누적된 기록이에요</span></div>
+<div class="star">⭐ 주요 기여를 3개 선택해주세요 <span class="badge">${picks.length}/3 선택</span></div>
+${warn?`<div class="note" style="color:#e01e5a">${warn}</div>`:'<div class="note">리스트에서 나에게 의미가 큰 기여를 골라주세요. AI는 정리만 돕고, 의미 부여는 내가 합니다.</div>'}
+<div class="chips" style="margin:8px 0">${['전체',...ts].map(t=>`<span class="chip ${t===rfilt?'on':''}" data-rf="${t}">${t}${t==='전체'?'':' '+q3.filter(x=>x.t===t).length}</span>`).join('')}</div>`;
+gts.forEach(t=>{h+=`<div class="ph" style="color:${TC[t]}">${t} · ${L.filter(x=>x.t===t).length}건</div>`+L.filter(x=>x.t===t).map(x=>`<div class="rv ${picks.includes(x.id)?'on':''}" data-pick="${x.id}"><input type="checkbox" ${picks.includes(x.id)?'checked':''}><div><b>${x.title}</b><div class="note">${x.proj} · ${x.d} · Evidence ${evN(x)}개</div><div class="note">Impact: ${x.imp}</div></div></div>`).join('')});
+if(picks.length){h+=`<div class="star">선택한 주요 기여</div>`+picks.map((id,i)=>{const x=ALL.find(a=>a.id===id);return `<div class="cc" style="border-left-color:${TC[x.t]}"><span class="tag" style="color:${TC[x.t]}">${i+1}. ${x.t}</span><b>${x.title}</b><div class="note">관련 Evidence ${evN(x)}개 자동 연결 · ${x.imp}</div><textarea rows="2" data-why="${id}" placeholder="이 기여가 왜 의미 있었는지 직접 서술해주세요">${why[id]||''}</textarea></div>`}).join('')+`<div class="foot"><button class="btn pri" id="submit">제출하기</button></div>`}
+if(done)h+=`<div class="ban">✅ 분기 리뷰가 제출되었어요. 선택한 기여와 서술은 My Contribution 히스토리에 함께 보관됩니다.</div>`;
+return h}
+function render(){body.innerHTML={msg:msgView,me:meView,rev:revView}[view]();
+document.querySelectorAll('#tabs span').forEach(e=>e.classList.toggle('on',e.dataset.t===view))}
+body.addEventListener('click',e=>{const t=e.target;let el;
+if(t.id==='add'){$('#modal').classList.add('show');return}
+if(t.id==='no'){document.querySelector('.app-card').remove();return}
+if(t.id==='submit'){done=true;render();return}
+if(el=t.closest('[data-sc]')){scope=el.dataset.sc;render();return}
+if(el=t.closest('[data-f]')){filt=el.dataset.f;render();return}
+if(el=t.closest('[data-rf]')){rfilt=el.dataset.rf;render();return}
+if(el=t.closest('[data-pick]')){const id=+el.dataset.pick;warn='';done=false;if(picks.includes(id))picks=picks.filter(i=>i!==id);else if(picks.length<3)picks.push(id);else warn='주요 기여는 최대 3개까지 선택할 수 있어요.';const y=body.scrollTop;render();body.scrollTop=y}});
+body.addEventListener('input',e=>{const t=e.target;if(t.dataset.why)why[t.dataset.why]=t.value;
+if(t.id==='hq'){const v=t.value.trim().toLowerCase();document.querySelectorAll('details.hi').forEach(d=>{d.style.display=(!v||d.textContent.toLowerCase().includes(v))?'':'none';if(v&&d.style.display==='')d.parentElement.parentElement.open=true})}});
+document.querySelectorAll('#tabs span').forEach(e=>e.onclick=()=>{view=e.dataset.t;render()});
+function chips(){$('#types').innerHTML=types.map(t=>`<span class="chip ${t===sel?'on':''}">${t}</span>`).join('');document.querySelectorAll('#types .chip').forEach(c=>c.onclick=()=>{sel=c.textContent;chips()})}
+$('#cancel').onclick=()=>$('#modal').classList.remove('show');
+$('#save').onclick=()=>{saved=true;$('#modal').classList.remove('show');render()};
+chips();render();
+</script></body></html>
